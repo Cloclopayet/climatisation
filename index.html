@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DRV Synoptique — Westpoint & Ayrwell</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="app-header">
+  <div class="header-left">
+    <div class="app-logo">DRV<span>SYNOP</span></div>
+    <div class="app-subtitle">CONCEPTION SYNOPTIQUE VRF / DRV</div>
+  </div>
+  <div class="header-center" id="project-name-wrap">
+    <input type="text" id="project-name" class="project-name-input" value="Nouveau projet" placeholder="Nom du projet...">
+    <span class="project-date" id="project-date"></span>
+  </div>
+  <div class="header-right">
+    <span class="badge badge-wp">WESTPOINT</span>
+    <span class="badge badge-ay">AYRWELL</span>
+    <button class="header-btn" onclick="App.saveProject()">💾 Sauvegarder</button>
+    <button class="header-btn" onclick="App.loadProject()">📂 Ouvrir</button>
+    <button class="header-btn primary" onclick="PDF.export()">⬇ PDF</button>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="app-body">
+
+  <!-- ========== LEFT PANEL ========== -->
+  <aside class="panel-left">
+
+    <!-- Brand -->
+    <div class="panel-section">
+      <div class="panel-title">Marque</div>
+      <div class="brand-selector">
+        <button class="brand-btn active" id="btn-wp" onclick="App.selectBrand('westpoint')">
+          <span class="brand-logo">WP</span>
+          <span>Westpoint</span>
+        </button>
+        <button class="brand-btn" id="btn-ay" onclick="App.selectBrand('ayrwell')">
+          <span class="brand-logo">AY</span>
+          <span>Ayrwell</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Unité extérieure -->
+    <div class="panel-section">
+      <div class="panel-title">Unité Extérieure</div>
+      <div class="field-group">
+        <label class="field-label">Modèle</label>
+        <select class="field-select" id="ue-select" onchange="App.updateUE()"></select>
+      </div>
+      <div class="stats-mini-grid">
+        <div class="mini-stat">
+          <div class="mini-stat-label">Puissance</div>
+          <div class="mini-stat-value" id="ue-power">-- kW</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-label">UI max</div>
+          <div class="mini-stat-value" id="ue-maxui">--</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-label">Taux max</div>
+          <div class="mini-stat-value" id="ue-taux">--%</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-stat-label">Réfrigérant</div>
+          <div class="mini-stat-value" id="ue-refrig">--</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ajouter UI -->
+    <div class="panel-section">
+      <div class="panel-title">Ajouter Unité Intérieure</div>
+      <div class="field-group">
+        <label class="field-label">Type</label>
+        <select class="field-select" id="ui-type-select"></select>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Puissance</label>
+          <select class="field-select" id="ui-power-select">
+            <option value="1.5">1.5 kW</option>
+            <option value="2.5">2.5 kW</option>
+            <option value="3.5" selected>3.5 kW</option>
+            <option value="5">5.0 kW</option>
+            <option value="7">7.0 kW</option>
+            <option value="9">9.0 kW</option>
+            <option value="12">12.0 kW</option>
+            <option value="14">14.0 kW</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Local / Étiquette</label>
+          <input type="text" class="field-input" id="ui-label" placeholder="Ex: Bureau 1">
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Étage / Zone</label>
+        <input type="text" class="field-input" id="ui-zone" placeholder="Ex: RDC, R+1...">
+      </div>
+      <button class="btn-add" onclick="App.addUI()">＋ AJOUTER UNITÉ INT.</button>
+    </div>
+
+    <!-- Paramètres réseau -->
+    <div class="panel-section">
+      <div class="panel-title">Paramètres Réseau</div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Longueur totale (m)</label>
+          <input type="number" class="field-input" id="longueur-totale" value="30" min="1" max="300" oninput="App.recalcAll()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Dénivelé max (m)</label>
+          <input type="number" class="field-input" id="denivele" value="5" min="0" max="50" oninput="App.recalcAll()">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field-group">
+          <label class="field-label">Longest branch (m)</label>
+          <input type="number" class="field-input" id="longest-branch" value="20" min="1" oninput="App.recalcAll()">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Température extérieure</label>
+          <select class="field-select" id="temp-ext">
+            <option value="35">Été 35°C</option>
+            <option value="40">Été 40°C</option>
+            <option value="-5">Hiver -5°C</option>
+            <option value="-10">Hiver -10°C</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Légende -->
+    <div class="panel-section legend-section">
+      <div class="panel-title">Légende</div>
+      <div class="legend-item"><div class="leg-line" style="background:#ff7b72"></div><span>Tuyau liquide (Cu)</span></div>
+      <div class="legend-item"><div class="leg-line" style="background:#79c0ff;height:5px"></div><span>Tuyau gaz (Cu)</span></div>
+      <div class="legend-item"><div class="leg-line" style="background:#3fb950;border-top:2px dashed #3fb950;background:transparent"></div><span>Câble communication</span></div>
+      <div class="legend-item"><div class="leg-dot" style="background:#d29922"></div><span>Manchon / Distributeur</span></div>
+      <div class="legend-item"><div class="leg-box" style="background:rgba(88,166,255,0.15);border-color:rgba(88,166,255,0.5)"></div><span>Unité extérieure (UE)</span></div>
+      <div class="legend-item"><div class="leg-box" style="background:rgba(165,214,255,0.12);border-color:rgba(165,214,255,0.4)"></div><span>Unité intérieure (UI)</span></div>
+    </div>
+
+  </aside>
+
+  <!-- ========== CANVAS ========== -->
+  <main class="canvas-wrap">
+    <div class="canvas-toolbar">
+      <button class="tool-btn active" id="tool-select" onclick="Canvas.setTool('select')" title="Sélectionner / Déplacer">
+        ✦ Sélect.
+      </button>
+      <button class="tool-btn" id="tool-pipe" onclick="Canvas.setTool('pipe')" title="Tracer tuyau">
+        ⊣ Tuyau
+      </button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn" onclick="Canvas.autoLayout()" title="Mise en page automatique">
+        ⚡ Auto-layout
+      </button>
+      <button class="tool-btn" onclick="Canvas.zoomIn()">＋ Zoom</button>
+      <button class="tool-btn" onclick="Canvas.zoomOut()">－ Zoom</button>
+      <button class="tool-btn" onclick="Canvas.zoomReset()">⊡ Ajuster</button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn danger" onclick="App.resetCanvas()">↺ Réinitialiser</button>
+      <span class="status-bar" id="status-bar">Prêt — Sélectionnez une UE et ajoutez des UI</span>
+    </div>
+
+    <div class="canvas-area" id="canvas-area">
+      <svg id="synoptique-svg" xmlns="http://www.w3.org/2000/svg"
+           xmlns:xlink="http://www.w3.org/1999/xlink">
+        <defs>
+          <marker id="arr-end" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+            <path d="M1,1 L7,4 L1,7" fill="none" stroke="#7d8590" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </marker>
+          <filter id="glow-ue">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+          </filter>
+        </defs>
+        <g id="grid-layer"></g>
+        <g id="pipes-layer"></g>
+        <g id="manchons-layer"></g>
+        <g id="units-layer"></g>
+        <g id="labels-layer"></g>
+      </svg>
+
+      <div class="empty-hint" id="empty-hint">
+        <div class="empty-icon">
+          <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
+            <rect x="6" y="24" width="60" height="34" rx="7" stroke="#58a6ff" stroke-width="1.5" stroke-dasharray="5 3" fill="rgba(88,166,255,0.04)"/>
+            <rect x="14" y="12" width="18" height="14" rx="4" stroke="#79c0ff" stroke-width="1.5" fill="rgba(121,192,255,0.08)"/>
+            <rect x="40" y="12" width="18" height="14" rx="4" stroke="#79c0ff" stroke-width="1.5" fill="rgba(121,192,255,0.08)"/>
+            <line x1="23" y1="26" x2="36" y2="40" stroke="#ff7b72" stroke-width="2" stroke-linecap="round"/>
+            <line x1="49" y1="26" x2="36" y2="40" stroke="#ff7b72" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="36" cy="40" r="4" fill="#d29922"/>
+            <line x1="23" y1="29" x2="36" y2="43" stroke="#79c0ff" stroke-width="2" stroke-linecap="round"/>
+            <line x1="49" y1="29" x2="36" y2="43" stroke="#79c0ff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="empty-title">SYNOPTIQUE VIDE</div>
+        <div class="empty-sub">Sélectionnez une UE, ajoutez des unités intérieures<br>puis cliquez <strong>⚡ Auto-layout</strong></div>
+        <button class="btn-demo" onclick="App.loadDemo()">Charger démo complète</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- ========== RIGHT PANEL ========== -->
+  <aside class="panel-right">
+
+    <!-- Bilan puissance -->
+    <div class="panel-section">
+      <div class="panel-title">Bilan de Puissance</div>
+      <div class="bilan-grid">
+        <div class="bilan-card">
+          <div class="bilan-label">UE installée</div>
+          <div class="bilan-value ok" id="b-ue">-- kW</div>
+        </div>
+        <div class="bilan-card">
+          <div class="bilan-label">Total UI</div>
+          <div class="bilan-value" id="b-ui">0.0 kW</div>
+        </div>
+      </div>
+      <div class="taux-card">
+        <div class="taux-header">
+          <span class="bilan-label">Taux de connexion</span>
+          <span class="taux-badge" id="taux-badge">—</span>
+        </div>
+        <div class="taux-value-row">
+          <span class="taux-value" id="taux-value">0%</span>
+          <span class="taux-range">Plage : 50% → 130%</span>
+        </div>
+        <div class="taux-bar">
+          <div class="taux-fill" id="taux-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="bilan-grid" style="margin-top:8px">
+        <div class="bilan-card">
+          <div class="bilan-label">Nb UI</div>
+          <div class="bilan-value" id="b-nbui">0 / --</div>
+        </div>
+        <div class="bilan-card">
+          <div class="bilan-label">Puissance moy. UI</div>
+          <div class="bilan-value" id="b-moy">-- kW</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau débours -->
+    <div class="panel-section">
+      <div class="panel-title">
+        Débours — Tuyauteries
+        <span class="title-sub" id="refrigerant-label">R410A</span>
+      </div>
+      <div class="table-wrap">
+        <table class="data-table" id="tuyaux-table">
+          <thead>
+            <tr>
+              <th>TRONÇON</th>
+              <th>Ø LIQ.</th>
+              <th>Ø GAZ</th>
+              <th>MANCHON</th>
+              <th>LONG.</th>
+            </tr>
+          </thead>
+          <tbody id="tuyaux-tbody">
+            <tr class="empty-row">
+              <td colspan="5">Aucune unité ajoutée</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Nomenclature manchons -->
+    <div class="panel-section">
+      <div class="panel-title">Nomenclature Manchons</div>
+      <div id="manchons-nomenclature">
+        <p class="empty-text">—</p>
+      </div>
+    </div>
+
+    <!-- Checklist -->
+    <div class="panel-section">
+      <div class="panel-title">Vérifications Installation</div>
+      <div id="checklist" class="checklist"></div>
+    </div>
+
+    <!-- Notes -->
+    <div class="panel-section">
+      <div class="panel-title">Notes de chantier</div>
+      <textarea class="field-input" id="notes-chantier" rows="4"
+        placeholder="Remarques, contraintes, observations..." style="resize:vertical;width:100%"></textarea>
+    </div>
+
+    <!-- Export -->
+    <div class="panel-section export-section">
+      <div class="panel-title">Export & Impression</div>
+      <button class="btn-export" onclick="PDF.export()">📄 Générer dossier PDF</button>
+      <button class="btn-export secondary" onclick="PDF.printSynoptique()">🖨 Imprimer synoptique</button>
+      <button class="btn-export secondary" onclick="App.exportJSON()">💾 Exporter JSON</button>
+    </div>
+
+  </aside>
+
+</div>
+
+<!-- MODAL CONFIRM -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal-box" id="modal-box"></div>
+</div>
+
+<!-- Scripts -->
+<script src="data/brands.js"></script>
+<script src="data/piping.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/pdf.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
